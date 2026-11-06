@@ -1,15 +1,18 @@
 // Every number the makers might tune: parry windows, attack timing, damage, gauge and enemy shape.
-export const perfectParryOpensAt = 1.2;  // seconds into the swing when a perfect parry becomes possible;
-                                         // press earlier in the swing than this and you only block
+export const perfectParryOpensAt = 0.75; // seconds into the swing when a perfect parry becomes possible;
+                                         // press earlier in the swing than this and you only block.
+                                         // MUST stay under swingTime: the perfect window is the last
+                                         // swingTime - perfectParryOpensAt seconds, and at 0.4s it is
+                                         // still exactly the window it was before this was sped up
 export const blockDamage = 5;            // health a block costs you. A block drains NO guard at all
 // How often he attacks. This is a pure WAIT that starts once he has recovered from the last swing, so it
 // is added to the animation rather than fitting inside it: the real gap between two blades landing is
-// attackInterval + windupTime + swingTime + enemyRecoverTime, and no interval can make him swing again
-// before his wind-up and swing are finished. Making him faster past that floor means shortening the
-// telegraph, which would change how the parry window reads — so the floor stays where it is.
-export const attackIntervalMin = 1.2;    // seconds of breathing room between attacks, lower bound
-export const attackIntervalMax = 1.6;    // and upper bound
-export const windupTime = 1.8;           // seconds of telegraph before the swing starts: no parry yet
+// attackInterval + windupTime + swingTime + enemyRecoverTime. Every one of those four was sped up
+// together, which is the only way it works — dropping the WAIT alone is swallowed whole by the wind-up,
+// because he can never swing again until his telegraph and his swing have finished.
+export const attackIntervalMin = 0.8;    // seconds of breathing room between attacks, lower bound
+export const attackIntervalMax = 1.1;    // and upper bound
+export const windupTime = 1.2;           // seconds of telegraph before the swing starts: no parry yet
 export const playerHealthMax = 100;
 export const enemyGaugeMax = 100;
 export const gaugeDrainPerfect = 34;     // gauge removed by a perfect parry. Only a perfect parry drains it
@@ -39,9 +42,9 @@ export const impactAlongBlades = 0.45;   // how far along the line from you to t
 export const playerCanWalk = false;      // false = the view is locked: WASD does nothing, no head bob
 
 // Swing timing and placeholder shape for the gray-box enemy.
-export const swingTime = 1.6;            // seconds the swing lasts; the blade lands at the end of it
+export const swingTime = 1.15;           // seconds the swing lasts; the blade lands at the end of it
 export const enemyStrikeTime = 0.15;     // no longer used: the swing absorbs the old separate strike
-export const enemyRecoverTime = 0.5;     // seconds spent recovering after a swing lands
+export const enemyRecoverTime = 0.35;    // seconds spent recovering after a swing lands
 export const enemyLunge = 0.7;           // metres the enemy lunges forward through the swing
 
 // The windup telegraph: how far it leans, how fast it turns orange, how brightly it glows.
