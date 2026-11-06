@@ -1,22 +1,24 @@
 // Parry resolution and the numbers of one fight: windows, gauge, health, damage.
 
 import {
-  perfectParryWindow,
-  blockWindow,
+  perfectParryOpensAt,
   gaugeDrainPerfect,
-  gaugeDrainBlock,
+  blockDamage,
   playerHealthMax,
   hitDamage,
 } from './tuning.js';
 
 const ATTACK_DAMAGE = 25;
 
-// No attack in progress is a miss; the later the press, the better the parry.
-export function resolveParry(timeUntilImpact) {
-  if (timeUntilImpact === null || timeUntilImpact === undefined) return 'hit';
-  if (timeUntilImpact <= perfectParryWindow) return 'perfect';
-  if (timeUntilImpact <= blockWindow) return 'block';
-  return 'hit';
+// The argument is seconds since the swing began, counting up from 0.
+// A perfect parry is only possible once the blade is actually coming through — the last stretch of
+// the swing. Press earlier than that, while the guard is still back, and you only block: a block
+// costs you blood and drains the enemy nothing, so timing is the whole game.
+// A press with no swing in progress at all is a flinch, and a flinch is a hit.
+export function resolveParry(timeSinceSwing) {
+  if (timeSinceSwing === null || timeSinceSwing === undefined) return 'hit';
+  if (timeSinceSwing >= perfectParryOpensAt) return 'perfect';
+  return 'block';
 }
 
 export function createFightState(config) {
@@ -35,7 +37,7 @@ export function applyOutcome(state, outcome) {
   if (outcome === 'perfect') {
     state.enemyGauge = Math.max(0, state.enemyGauge - gaugeDrainPerfect);
   } else if (outcome === 'block') {
-    state.enemyGauge = Math.max(0, state.enemyGauge - gaugeDrainBlock);
+    state.playerHealth = Math.max(0, state.playerHealth - blockDamage); // a block drains no guard
   } else if (outcome === 'hit') {
     state.playerHealth = Math.max(0, state.playerHealth - hitDamage);
   }

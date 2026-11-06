@@ -8,7 +8,7 @@ import { createUI } from './ui.js';
 
 const OUTCOME_WORDS = { perfect: 'PERFECT PARRY', block: 'BLOCK', hit: 'HIT' };
 const RESTART_KEY = String(restartKey).toLowerCase();
-const INTRO = `Click to look around. Space or right mouse parries, left mouse or E attacks, ${RESTART_KEY.toUpperCase()} restarts.`;
+const INTRO = `Space or right mouse parries. Left mouse or E attacks. ${RESTART_KEY.toUpperCase()} restarts.`;
 
 // --- world ---
 const scene = new THREE.Scene();
@@ -39,7 +39,7 @@ const ui = createUI();
 // --- fight ---
 const enemy = new Enemy(scene, ENEMIES[0]);
 let state = createFightState(ENEMIES[0]);
-let parriedThisAttack = false;
+let answeredThisAttack = false; // did the player already answer this attack? one mistake, one cost
 let wantsIntro = true;
 
 // A few metres out front, facing the player. enemies.js owns the shape; the arena owns the placing.
@@ -54,13 +54,15 @@ function showOutcome(outcome) {
   ui.setOutcome(OUTCOME_WORDS[outcome] || outcome, outcome);
 }
 
-// The one action: press at the right moment. Too early is a block, way too early or idle is a hit.
+// The one action: press while the blade is coming through. Seconds into the swing decides
+// perfect or block; pressing at anything else — a flinch during the wind-up, empty air — is a hit.
 function parry() {
   if (!enemy || state.over || state.won) return;
-  const answering = enemy.timeUntilImpact !== null; // a live swing, not a random press
-  const outcome = resolveParry(enemy.timeUntilImpact);
+  const outcome = resolveParry(enemy.timeSinceSwing);
   state = applyOutcome(state, outcome);
-  if (answering) parriedThisAttack = true; // so the landing frame below does not hurt twice
+  // He is attacking, so this press answers this attack: the landing frame must not bill it twice.
+  // A press at empty air answers nothing and does not spend the attack's one mistake.
+  if (enemy.state === 'windup' || enemy.state === 'swing') answeredThisAttack = true;
   player.parryLunge();
   showOutcome(outcome);
   refreshBars();
@@ -79,7 +81,7 @@ function restart() {
   enemy.reset();
   state = createFightState(ENEMIES[0]);
   player.reset();
-  parriedThisAttack = false;
+  answeredThisAttack = false;
   wantsIntro = false;
   ui.setOutcome('READY', 'ready');
   ui.hideMessage();
@@ -106,12 +108,9 @@ canvas.addEventListener('mousedown', (e) => {
   if (e.button === 2) {
     e.preventDefault();
     parry();
-  } else if (e.button === 0 && document.pointerLockElement === canvas) {
-    attack(); // the first left click only grabs the pointer lock, so it does not also swing
+  } else if (e.button === 0) {
+    attack(); // no pointer lock any more, so every left click swings
   }
-});
-addEventListener('pointerlockchange', () => {
-  if (document.pointerLockElement === canvas) wantsIntro = false;
 });
 
 addEventListener('resize', () => {
@@ -137,16 +136,16 @@ renderer.setAnimationLoop(() => {
   player.update(dt);
 
   if (enemy) {
-    const landed = enemy.update(dt);
+    const landed = enemy.update(dt); // true on the one frame the swing ends: the blade landing
     if (landed) {
-      if (!parriedThisAttack && !state.over && !state.won) {
-        state = applyOutcome(state, 'hit');
+      if (!answeredThisAttack && !state.over && !state.won) {
+        state = applyOutcome(state, 'hit'); // nobody answered this swing
         showOutcome('hit');
         refreshBars();
       }
-      parriedThisAttack = false;
+      answeredThisAttack = false;
     } else if (enemy.state === 'idle' && !state.over && !state.won) {
-      parriedThisAttack = false;
+      answeredThisAttack = false;
     }
   }
 
