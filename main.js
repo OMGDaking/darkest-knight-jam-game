@@ -84,10 +84,22 @@ function inMusicPhase() {
     state.enemyHealth <= state.enemyConfig.health * MUSIC_AT_HEALTH;
 }
 
-// The beat position read straight off the playing track, in beats since the loop started. Looping an exact
-// whole number of bars is what makes this safe to read forever.
-function beatNow() {
-  return bossMusic.currentTime / BEAT_SECONDS;
+// THE BEAT CLOCK. While the track is really playing this is the track's own playback position, and that
+// is the whole point: the drum and the blade are driven by one clock, so they cannot drift apart however
+// long the fight runs.
+//
+// But if the audio never starts — a blocked autoplay, a file that failed to load, a browser that will not
+// decode it — that position sits at 0 for ever. A conductor waiting on it would hold the boss frozen in
+// his idle for the rest of the fight, and the game would look broken rather than silent. So a plain
+// frame-time clock runs underneath as a fallback, and the fight is always playable, music or no music.
+let fallbackClock = 0;
+
+function musicRunning() {
+  return !bossMusic.paused && bossMusic.readyState >= 2; // HAVE_CURRENT_DATA: actually producing sound
+}
+
+function beatClock() {
+  return musicRunning() ? bossMusic.currentTime : fallbackClock;
 }
 
 // Browsers refuse programmatic playback until the page has been interacted with, and a refused play() is
@@ -95,13 +107,21 @@ function beatNow() {
 // saying why. The title screen already takes a keypress to leave, so this spends that gesture: play the
 // track once, stop it, and the browser then lets it start on its own at half health like it should.
 let audioUnlocked = false;
+let unlocking = false; // one attempt in the air at a time: a press can reach here along two paths at once
 function unlockAudio() {
-  if (audioUnlocked) return;
-  audioUnlocked = true;
+  // Only latch on SUCCESS. Latching on the attempt was wrong: one refused play() would then mean the
+  // music never got another chance, and every later press would be thrown away.
+  if (audioUnlocked || unlocking || inMusicPhase()) return;
+  unlocking = true;
   bossMusic.play().then(() => {
+    audioUnlocked = true;
     bossMusic.pause();
     bossMusic.currentTime = 0;
-  }).catch(() => {}); // if even a real keypress is refused, there is nothing further to try
+  }).catch(() => {
+    /* refused again: not latched, so the next press tries again */
+  }).then(() => {
+    unlocking = false;
+  });
 }
 
 // Whatever is playing stops the moment the phase is not running: a death, a restart or the win.
@@ -130,7 +150,7 @@ const downbeat = (beat) => beat % BEATS_PER_BAR === 0;
 // point — otherwise his own cadence would drift him off the beat in the seconds before the downbeat.
 function conductBoss() {
   if (!inMusicPhase() || !enemy || enemy.state !== 'idle') return false;
-  const now = bossMusic.currentTime;
+  const now = beatClock(); // the track's position when it is playing, frame time when it is not
   // The earliest beat he may land on, and then step on until there is room for this blade's telegraph.
   let landBeat = Math.max(Math.ceil(now / BEAT_SECONDS) + 1, conductLandBeat + CONDUCT_REST_BEATS);
   while (landBeat * BEAT_SECONDS - enemy.leadTime(downbeat(landBeat)) < now) landBeat += 1;
@@ -393,6 +413,7 @@ function attack() {
 // --- input ---
 addEventListener('keydown', (e) => {
   if (e.repeat) return;
+  unlockAudio(); // every press is a chance to earn the right to play sound, and a no-op once earned
   const key = e.key.toLowerCase();
 
   if (phase === 'title') {
@@ -474,6 +495,9 @@ renderer.setAnimationLoop(() => {
   if (enemy && phase === 'fight') {
     // THE BEAT CONDUCTS: in the lord's second phase, while he is idle the beat holds him and starts the
     // blade so that it lands on the drum. Everywhere else this is the enemy's own cadence, untouched.
+    // If the music is not actually producing sound, the fallback clock ticks instead, so the conductor
+    // below always has a clock that moves. This is the line that stops a silent track freezing the boss.
+    if (inMusicPhase() && !musicRunning()) fallbackClock += dt;
     const conducting = inMusicPhase() && enemy.state === 'idle';
     if (conducting) conductBoss();
     const landed = conducting ? false : enemy.update(dt); // true on the frame the swing ends: the landing
