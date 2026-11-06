@@ -1,9 +1,10 @@
 // Every number the makers might tune: parry windows, attack timing, damage, gauge and enemy shape.
-export const perfectParryOpensAt = 0.55; // seconds into the swing when a perfect parry becomes possible;
+export const perfectParryOpensAt = 0.40; // seconds into the swing when a perfect parry becomes possible;
                                          // press earlier in the swing than this and you only block.
-                                         // MUST stay under swingTime: the perfect window is the last
-                                         // swingTime - perfectParryOpensAt seconds, and at 0.4s it is
-                                         // still exactly the window it was before this was sped up
+                                         // MUST stay under swingTime. THIS is the difficulty number: the
+                                         // perfect window is swingTime - perfectParryOpensAt = 0.20s now,
+                                         // half the 0.4s it was. Raise this toward swingTime to make the
+                                         // perfect parry rarer; lower it to be kinder.
 export const blockDamage = 5;            // health a block costs you. A block drains NO guard at all
 // How often he attacks. This is a pure WAIT that starts once he has recovered from the last swing, so it
 // is added to the animation rather than fitting inside it: the real gap between two blades landing is
@@ -42,7 +43,9 @@ export const impactAlongBlades = 0.45;   // how far along the line from you to t
 export const playerCanWalk = false;      // false = the view is locked: WASD does nothing, no head bob
 
 // Swing timing and placeholder shape for the gray-box enemy.
-export const swingTime = 0.95;           // seconds the swing lasts; the blade lands at the end of it
+export const swingTime = 0.60;           // seconds the swing lasts; the blade lands at the end of it.
+                                         // 0.95 -> 0.60: the blade comes through fast, so the press has to
+                                         // be late and exact. Must stay above perfectParryOpensAt.
 export const enemyStrikeTime = 0.15;     // no longer used: the swing absorbs the old separate strike
 export const enemyRecoverTime = 0.25;    // seconds spent recovering after a swing lands
 export const enemyLunge = 0.7;           // metres the enemy lunges forward through the swing
