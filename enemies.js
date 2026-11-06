@@ -6,7 +6,7 @@ import {
   introBossHealth, finalBossHealth,
   introBossHeavyChance, finalBossHeavyChance,
   introBossAllowConsecutiveHeavies, finalBossAllowConsecutiveHeavies,
-  finalBossCadenceScale, finalBossWindupScale, finalBossSwingScale,
+  finalBossCadenceScale, finalBossWindupScale, finalBossSwingScale, finalBossSizeScale,
   swingTime, perfectParryOpensAt, enemyRecoverTime, enemyLunge, enemyLeanBack, telegraphRampTime,
   enemyGlow, enemyWidth, enemyHeight, enemyDepth,
   enemyColor, enemyWarningColor, enemyStrikeColor, enemyStunColor, enemyStunSlump, enemyStunBladeDrop,
@@ -46,6 +46,9 @@ export const ENEMIES = [
     swingTime: swingTime * finalBossSwingScale,
     perfectParryOpensAt: perfectParryOpensAt * finalBossSwingScale,
     sprite: 'assets/sprites/final-boss.webp', // the makers' own art, made with an image generator
+    // He stands a third taller than the intro boss. Only his picture grows: every timing number above is
+    // his own already, and none of them change with it.
+    size: finalBossSizeScale,
   },
 ];
 
@@ -87,12 +90,15 @@ export class Enemy {
     // sword, so the katana box is hidden for it and the swing is carried by the lean, the lunge and the
     // colour running hot instead. Where no picture is named, this is the gray box, untouched.
     const sprite = config.sprite ? new THREE.TextureLoader().load(config.sprite) : null;
+    // SIZE is this enemy's own, so one of them can be a bigger figure than the other without touching
+    // anyone else's numbers. Every enemy without a size is the shared height, unchanged.
+    const size = enemyHeight * (config.size || 1);
     // Both shapes are shifted up inside their own geometry, so the mesh origin sits at the feet: place it
     // with mesh.position.set(x, 0, z) and the lean pivots on the ground.
     const geometry = sprite
-      ? new THREE.PlaneGeometry(enemyHeight, enemyHeight) // the art is square, so the plane is too
-      : new THREE.BoxGeometry(enemyWidth, enemyHeight, enemyDepth);
-    geometry.translate(0, enemyHeight / 2, 0);
+      ? new THREE.PlaneGeometry(size, size) // the art is square, so the plane is too
+      : new THREE.BoxGeometry(enemyWidth, size, enemyDepth);
+    geometry.translate(0, size / 2, 0);
     const material = sprite
       ? new THREE.MeshStandardMaterial({
           map: sprite,

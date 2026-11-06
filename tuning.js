@@ -99,6 +99,10 @@ export const finalBossCadenceScale = 0.4;  // the lord waits far less than the i
 // coming. That carries to his heavies too: 1.12s of red against the intro boss's 1.6s. Turn it down to
 // make him crueller, up to be kinder — the perfect window stays 0.4s either way.
 export const finalBossWindupScale = 0.7;   // and telegraphs for less time
+// HOW BIG THE LORD STANDS. His sprite is scaled by this and by nothing else — the intro boss is left
+// exactly as he was, so the size difference between the two is itself a piece of information: the figure
+// that fills more of the doorway is the one that matters. 1 = the same size as the intro boss.
+export const finalBossSizeScale = 1.3;
 // How often each enemy winds up a HEAVY instead of a light, decided as each wind-up begins.
 // The intro boss throws one only now and then, so the first fight stays readable; the lord leans on them.
 export const introBossHeavyChance = 0.12; // about one heavy in eight
