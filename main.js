@@ -19,7 +19,7 @@ import { createArena } from './art.js';
 const GAME_TITLE = 'Darkest Knight'; // one string: the name on the title screen (meta.json title too)
 // The one line held on screen between the two fights. PLACEHOLDER: the makers write the real words; this
 // single string is where they go, and nothing else about the hand-over is theirs to touch.
-const TRANSITION_LINE = '[line goes here]';
+const TRANSITION_LINE = 'Time to get serious';
 const OUTCOME_WORDS = {
   perfect: 'PERFECT PARRY', block: 'BLOCK', hit: 'HIT', winded: 'WINDED', wild: 'WILD',
 };
