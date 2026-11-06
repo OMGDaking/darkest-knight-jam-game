@@ -78,12 +78,14 @@ Tasks in the same wave touch different files, so they can run at the same time.
 
 ## Tuning knobs
 
-- `perfectParryWindow`: `1.0` — press within this long before the blade lands
-- `blockWindow`: `1.6` — press this early and you block instead
+- `swingTime`: `1.6` — how long the enemy's swing takes; the blade lands at the end of it
+- `perfectParryOpensAt`: `1.2` — seconds into the swing when a perfect parry becomes possible
+- `blockDamage`: `5` — what a block costs you. A block drains the enemy's guard by nothing at all
+- `gaugeDrainPerfect`: `34` — only a perfect parry touches the guard
+- `windupTime`: `1.8` — the orange telegraph. No parry is possible yet
 - `attackIntervalMin` / `attackIntervalMax`: `2.5` / `3.0`
 - `heavyChance`: per enemy — `0` for the basic enemy
-- `enemyGaugeMax`, `gaugeDrainPerfect`, `gaugeDrainBlock`
-- `playerHealthMax`
+- `enemyGaugeMax`, `playerHealthMax`, `hitDamage`
 - `bpm`: `185` (from your reference)
 - `finalPhaseHealth`: `0.5`
 
