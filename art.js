@@ -11,7 +11,7 @@ import * as THREE from 'three';
 const TEX = 512;             // every canvas texture is 512 on a side, and no texture is 1024
 const ANISOTROPY = 4;        // enough to keep the long tatami rows and gold panels from smearing
 
-// THE TATAMI HALL — fights 1 and 2. Long, low and cold: a corridor he is passing through, not a
+// THE TATAMI HALL — the intro boss. Long, low and cold: a corridor he is passing through, not a
 // room he belongs in. The same lantern, beam and shoji panel repeat down its length, and the far
 // end is a shut door, not a destination.
 const HALL_W = 9.6;              // side walls stand at x = ±4.8
@@ -29,7 +29,7 @@ const HALL_COLUMN_Z = [-2.2, -8.2, -14.2];
 const HALL_LANTERN_Z = [-4.6, -8.6, -12.6, -16.6];
 const HALL_LAMP_Z = [-2.6, -6.6, -10.6, -14.6];
 
-// THE THRONE ROOM — fight 3. Wider, taller, gold, and built on one axis: the carpet, the steps, the
+// THE THRONE ROOM — the lord, and only him. Wider, taller, gold, and built on one axis: the carpet, the steps, the
 // dais, the gate and the throne all sit dead centre, so the eye is pulled down the room to the seat
 // of the man he came for. Warmer, heavier and brighter at the far end than the hall ever is.
 const THRONE_W = 11;             // side walls at x = ±5.5
