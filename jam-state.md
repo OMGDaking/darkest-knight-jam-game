@@ -7,5 +7,5 @@ Written by `/jam-start`, `/jam-plan`, the build terminal, and `/jam-ship`. Read 
 - Start time: 2026-11-06T11:04
 - Phase: onboarding
 - Card:
-- Repo URL:
+- Repo URL: https://github.com/OMGDaking/darkest-knight-jam-game
 - Gallery PR:
