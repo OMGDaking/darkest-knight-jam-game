@@ -334,7 +334,7 @@ function parry() {
   if (!canAct(state)) return; // winded: the blade will not come up, not even for a perfect parry
   // The parry itself is weightless: a heavy is judged on the same window. Only the price of a miss (or of
   // a block, which is a swing absorbed rather than stopped) knows the swing was heavy.
-  const outcome = applyOutcome(state, resolveParry(enemy.timeSinceSwing), enemy.isHeavy).lastOutcome;
+  const outcome = applyOutcome(state, resolveParry(enemy.timeSinceSwing, enemy.parryOpensAt), enemy.isHeavy).lastOutcome;
   chargeStamina(state, outcome); // the press spends the wind, whatever it turned out to be
   // Only a press while the blade is actually coming through answers this attack, so the landing frame
   // must not bill it twice. A flail during the wind-up answers nothing: that swing still lands.

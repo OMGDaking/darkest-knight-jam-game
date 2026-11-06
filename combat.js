@@ -21,9 +21,9 @@ import {
 // costs you blood and drains the enemy nothing, so timing is the whole game.
 // A press with no swing in progress at all — empty air, or a flail during the wind-up — is a wild
 // swing: a wasted press. It costs wind, never blood, because nothing connected.
-export function resolveParry(timeSinceSwing) {
+export function resolveParry(timeSinceSwing, opensAt = perfectParryOpensAt) {
   if (timeSinceSwing === null || timeSinceSwing === undefined) return 'wild';
-  if (timeSinceSwing >= perfectParryOpensAt) return 'perfect';
+  if (timeSinceSwing >= opensAt) return 'perfect';
   return 'block';
 }
 

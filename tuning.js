@@ -46,6 +46,12 @@ export const playerCanWalk = false;      // false = the view is locked: WASD doe
 export const swingTime = 0.60;           // seconds the swing lasts; the blade lands at the end of it.
                                          // 0.95 -> 0.60: the blade comes through fast, so the press has to
                                          // be late and exact. Must stay above perfectParryOpensAt.
+
+// THE LORD'S OWN SWING. Both bosses share every number above except this one: his blade comes through in
+// 0.42s against the intro boss's 0.60s, and his perfect-parry window shrinks with it — 0.14s against the
+// intro boss's 0.20s. This is the only number in the file that tightens the timing TEST itself rather
+// than just the warning, which makes it the cruellest one here. Lower it to make the lord crueller still.
+export const finalBossSwingScale = 0.7;
 export const enemyStrikeTime = 0.15;     // no longer used: the swing absorbs the old separate strike
 export const enemyRecoverTime = 0.25;    // seconds spent recovering after a swing lands
 export const enemyLunge = 0.7;           // metres the enemy lunges forward through the swing

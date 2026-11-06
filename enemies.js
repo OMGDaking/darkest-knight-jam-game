@@ -6,8 +6,8 @@ import {
   introBossHealth, finalBossHealth,
   introBossHeavyChance, finalBossHeavyChance,
   introBossAllowConsecutiveHeavies, finalBossAllowConsecutiveHeavies,
-  finalBossCadenceScale, finalBossWindupScale,
-  swingTime, enemyRecoverTime, enemyLunge, enemyLeanBack, telegraphRampTime,
+  finalBossCadenceScale, finalBossWindupScale, finalBossSwingScale,
+  swingTime, perfectParryOpensAt, enemyRecoverTime, enemyLunge, enemyLeanBack, telegraphRampTime,
   enemyGlow, enemyWidth, enemyHeight, enemyDepth,
   enemyColor, enemyWarningColor, enemyStrikeColor, enemyStunColor, enemyStunSlump, enemyStunBladeDrop,
   enemyHeavyColor, enemyHeavyStrikeColor, heavyWindupScale, enemyHeavyLeanScale,
@@ -26,6 +26,9 @@ export const ENEMIES = [
     cadenceMin: attackIntervalMin,
     cadenceMax: attackIntervalMax,
     windupTime,
+    // His own swing, and the threshold the perfect parry opens at inside it: window = 0.60 - 0.40 = 0.20s
+    swingTime,
+    perfectParryOpensAt,
     sprite: 'assets/sprites/intro-boss.png', // the makers' own art, made with an image generator
   },
   {
@@ -38,6 +41,10 @@ export const ENEMIES = [
     cadenceMin: attackIntervalMin * finalBossCadenceScale,
     cadenceMax: attackIntervalMax * finalBossCadenceScale,
     windupTime: windupTime * finalBossWindupScale,
+    // The lord swings faster than anyone: 0.42s, and his threshold scales with it, so his perfect window
+    // is 0.42 - 0.28 = 0.14s. Both shrink together, which is what keeps the parry a read and not a guess.
+    swingTime: swingTime * finalBossSwingScale,
+    perfectParryOpensAt: perfectParryOpensAt * finalBossSwingScale,
     sprite: 'assets/sprites/final-boss.webp', // the makers' own art, made with an image generator
   },
 ];
@@ -127,13 +134,20 @@ export class Enemy {
   // That is the number the parry is judged on. Null in every other state: no swing, no parry.
   get timeSinceSwing() {
     if (this._state !== 'swing') return null;
-    return Math.min(swingTime, Math.max(0, this._swingElapsed));
+    return Math.min(this.config.swingTime, Math.max(0, this._swingElapsed));
+  }
+
+  // This enemy's own perfect-parry threshold, in seconds into its own swing. The lord's swing is shorter,
+  // so his threshold comes down with it and his window is tighter — the one place a boss is harder to
+  // PARRY rather than merely harder to read.
+  get parryOpensAt() {
+    return this.config.perfectParryOpensAt;
   }
 
   // How long the blade takes to land from the moment a wind-up begins — for a light or for a heavy. The
   // music phase works backwards from a beat with this: start the telegraph this long before the drum.
   leadTime(heavy) {
-    return this.config.windupTime * (heavy ? heavyWindupScale : 1) + swingTime;
+    return this.config.windupTime * (heavy ? heavyWindupScale : 1) + this.config.swingTime;
   }
 
   // The music phase names the attack instead of the dice: begin a wind-up now, of the given weight. From
@@ -234,13 +248,13 @@ export class Enemy {
       }
     } else if (this._state === 'swing') {
       this._swingElapsed += dt;
-      const t = Math.min(1, this._swingElapsed / swingTime);
+      const t = Math.min(1, this._swingElapsed / this.config.swingTime);
       this._swing(t);
       this._mesh.position
         .copy(this._strikeFrom)
         .addScaledVector(this._lungeDir, enemyLunge * t);
-      if (this._swingElapsed >= swingTime) {
-        this._swingElapsed = swingTime;
+      if (this._swingElapsed >= this.config.swingTime) {
+        this._swingElapsed = this.config.swingTime;
         this._mesh.position.copy(this._strikeFrom).addScaledVector(this._lungeDir, enemyLunge);
         this._state = 'recovering';
         this._timer = enemyRecoverTime;
