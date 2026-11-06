@@ -26,6 +26,12 @@ Format for each playtest (after M2 and after M3):
 - **Bored or stuck:**
 - **What we'll change (who decided):**
 
+### 16:21: Team check after M2 (not a playtest)
+- **Changed:** We changed the timing and the speed.
+- **Expected:** didn't predict
+- **Saw:** We checked for timing and made sure it responded. Dakota (dk) played it. This was not an outside playtest, so Playtest 1 is still open.
+- **Decided, and why (who):** We changed the timing and the speed after the team check. Who decided: not sure yet.
+
 ## Reflection
 
 *At the end: What did you decide that Claude didn't? What did you reject from Claude, and why? What would you do with another jam session?*
