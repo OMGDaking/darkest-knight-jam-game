@@ -15,6 +15,7 @@ import { createPlayer } from './player.js';
 import { createUI } from './ui.js';
 import { createFx } from './fx.js';
 import { createArena } from './art.js';
+import { createSfx } from './sfx.js';
 
 const GAME_TITLE = 'Darkest Knight'; // one string: the name on the title screen (meta.json title too)
 // The one line held on screen between the two fights. PLACEHOLDER: the makers write the real words; this
@@ -56,6 +57,7 @@ scene.add(ground);
 const player = createPlayer(scene, camera, renderer.domElement);
 const ui = createUI();
 const fx = createFx(scene, camera);
+const sfx = createSfx();
 
 // --- the world behind the fight ---
 // The tatami hall is where he starts, among the lord's ordinary guards; the golden throne room is the end
@@ -86,6 +88,20 @@ function inMusicPhase() {
 // whole number of bars is what makes this safe to read forever.
 function beatNow() {
   return bossMusic.currentTime / BEAT_SECONDS;
+}
+
+// Browsers refuse programmatic playback until the page has been interacted with, and a refused play() is
+// SILENT rather than an error — so the boss music could simply never be heard, with nothing anywhere
+// saying why. The title screen already takes a keypress to leave, so this spends that gesture: play the
+// track once, stop it, and the browser then lets it start on its own at half health like it should.
+let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  bossMusic.play().then(() => {
+    bossMusic.pause();
+    bossMusic.currentTime = 0;
+  }).catch(() => {}); // if even a real keypress is refused, there is nothing further to try
 }
 
 // Whatever is playing stops the moment the phase is not running: a death, a restart or the win.
@@ -161,6 +177,17 @@ const EFFECT_KIND = { winded: 'hit', wild: 'block' };
 
 function fxKind(outcome) {
   return EFFECT_KIND[outcome] || outcome;
+}
+
+// WHERE THE PLAYER'S BLADE LANDS. Every other burst in the game happens at the meeting point in mid-air
+// between the two of you, because every other burst is two blades touching. A cut is the one blow that
+// got PAST his guard, so it lands on him — at his chest, wherever he has staggered to.
+const _cutPoint = new THREE.Vector3();
+
+function cutSpark() {
+  _cutPoint.copy(enemy.mesh.position);
+  _cutPoint.y += impactHeight;
+  fx.parrySpark('cut', _cutPoint);
 }
 
 // His guard has just been emptied: he is out for stunTime, and the body has to stop with it — a perfect
@@ -298,6 +325,7 @@ function toTitle() {
 }
 
 function beginRun() {
+  unlockAudio(); // the run begins on a real keypress: the one chance to earn the right to play sound
   enterFight(0);
 }
 
@@ -344,6 +372,9 @@ function parry() {
   showOutcome(outcome);
   ui.flash(fxKind(outcome)); // winded: red blood. wild: the faint cold block look, nothing connected
   fx.parrySpark(fxKind(outcome), impact);
+  // Steel on steel only when steel actually met steel. A block is the same clash stopped short; a wild
+  // swing touched nothing at all, so it gets no clash — just the empty cold look it already has.
+  if (outcome === 'perfect' || outcome === 'block') sfx.parry(outcome === 'perfect');
   refreshBars();
 }
 
@@ -353,6 +384,8 @@ function attack() {
   if (attackCooldown > 0) return; // one swing at a time: a second press inside the cooldown is refused
   if (!attackEnemy(state)) return; // only a stunned enemy takes a cut
   attackCooldown = swingCooldown;
+  cutSpark(); // blood on him, not in the air: his guard is open and your blade got in
+  sfx.bossHurt();
   refreshBars();
   if (state.won) winFight();
 }
@@ -454,6 +487,7 @@ renderer.setAnimationLoop(() => {
         showOutcome(outcome);
         ui.flash(fxKind(outcome));
         fx.parrySpark(fxKind(outcome), impact);
+        sfx.playerHurt(); // his blade got through: this is the sound of it being you
       }
       answeredThisAttack = false;
     } else if (enemy.state === 'idle') {

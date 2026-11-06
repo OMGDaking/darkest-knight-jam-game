@@ -11,6 +11,8 @@ const LIGHT_POOL_SIZE = 2;
 // perfect: the biggest burst, warm gold, wide and fast.
 // block:   a few cold blue shards, slow and short — barely there, and it lights nothing.
 // hit:     heavy red thrown at the camera (the player's side of the screen), with the hardest gravity.
+// cut:     your blade getting through HIS guard. The only look that belongs to the enemy's own body
+//          rather than to the air between the two of you: dark blood, thrown loose and falling hard.
 const LOOKS = {
   perfect: {
     key: 'perfect', count: 20, ttl: 0.42, color: 0xffe9b4,
@@ -30,6 +32,12 @@ const LOOKS = {
     gravity: 11, towardCamera: 0.9, opacity: 0.95, blending: THREE.NormalBlending,
     light: { color: 0xff2a18, intensity: 18, distance: 7 },
   },
+  cut: {
+    key: 'cut', count: 16, ttl: 0.55, color: 0x8e0f14,
+    speedMin: 1.1, speedMax: 2.9, shardMin: 0.3, shardMax: 0.8, width: 2.6,
+    gravity: 14, towardCamera: 0.25, opacity: 0.95, blending: THREE.NormalBlending,
+    light: { color: 0xc0161c, intensity: 9, distance: 5 },
+  },
 };
 
 const _dir = new THREE.Vector3();
@@ -41,7 +49,7 @@ export function createFx(scene, camera) {
   const live = [];
   // Finished bursts wait here: their group, shards, and single shared material get reused, so after the
   // first second of a fight nothing is allocated, nothing is orphaned and no shader is rebuilt.
-  const spare = { perfect: [], block: [], hit: [] };
+  const spare = { perfect: [], block: [], hit: [], cut: [] };
 
   const lights = [];
   for (let i = 0; i < LIGHT_POOL_SIZE; i++) {
