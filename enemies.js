@@ -144,26 +144,6 @@ export class Enemy {
     return this.config.perfectParryOpensAt;
   }
 
-  // How long the blade takes to land from the moment a wind-up begins — for a light or for a heavy. The
-  // music phase works backwards from a beat with this: start the telegraph this long before the drum.
-  leadTime(heavy) {
-    return this.config.windupTime * (heavy ? heavyWindupScale : 1) + this.config.swingTime;
-  }
-
-  // The music phase names the attack instead of the dice: begin a wind-up now, of the given weight. From
-  // here it is exactly as if it had been rolled — same telegraph, same window, same landing frame.
-  conductAttack(heavy) {
-    if (this._state !== 'idle') return false;
-    this._state = 'windup';
-    this._heavy = heavy;
-    this._lastWasHeavy = heavy;
-    this._windupTotal = this.config.windupTime * (heavy ? heavyWindupScale : 1);
-    this._windupLeft = this._windupTotal;
-    this._timer = 0;
-    this._telegraph(0);
-    return true;
-  }
-
   reset() {
     if (this._lunged) this._mesh.position.copy(this._strikeFrom); // undo a lunge that was in progress
     this._lunged = false;
