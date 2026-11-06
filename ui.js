@@ -23,6 +23,17 @@ const FONT = 'system-ui,-apple-system,"Segoe UI",sans-serif';
 const STAMINA_LIVE = '#9fd8e8';    // the pale cold blue of a bar with wind in it
 const STAMINA_DRAINED = '#6f7d82'; // the same bar with every last scrap of wind gone: greyed out
 
+// THE FRAME COUNTER, behind ?fps on the URL. Three seconds is the window, because that is the one the
+// judging checklist asks about. The MINIMUM is the honest number here: an average can sit comfortably at
+// 60 while one long frame every few seconds still stutters the blade, and the player feels that frame.
+const FPS_WINDOW = 3;    // seconds before the window starts over
+const FPS_PAINT = 0.25;  // seconds between repaints, so the readout cannot cost more than it reports
+
+function formatCount(n) {
+  if (!n) return '0';
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+}
+
 export function createUI() {
   const hud = document.createElement('div');
   hud.style.cssText = `position:fixed;inset:0;pointer-events:none;z-index:10;font-family:${FONT}`;
@@ -67,6 +78,18 @@ export function createUI() {
     'position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:none;' +
     `font:600 11px/1 ${FONT};letter-spacing:3px;color:#9d948a;text-shadow:0 2px 6px #000`;
   hud.appendChild(fight);
+
+  // The frame counter. Absent from the URL means absent from the screen: no element is built and the
+  // game pays nothing for it. It lives top right, clear of the guard gauge and the outcome badge.
+  const fps = new URLSearchParams(location.search).has('fps') ? document.createElement('div') : null;
+  let fpsFrames = 0, fpsElapsed = 0, fpsWorstDt = 0, fpsSincePaint = 0;
+  if (fps) {
+    fps.style.cssText =
+      'position:absolute;right:24px;top:20px;padding:6px 10px;border-radius:6px;text-align:right;' +
+      'background:rgba(0,0,0,0.6);border:1px solid rgba(220,210,190,0.3);white-space:pre;color:#cfc6b8;' +
+      'font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace';
+    hud.appendChild(fps);
+  }
 
   return {
     setOutcome(text, kind) {
@@ -153,6 +176,28 @@ export function createUI() {
       outcome.style.display = 'block';
       for (const bar of [health, stamina, gauge, enemyHealth]) bar.wrap.style.display = 'block';
       fight.style.display = fight.textContent ? 'block' : 'none';
+    },
+    // Called once a frame with this frame's seconds and renderer.info. Does nothing at all unless ?fps is
+    // on the URL, so the game is identical with and without it.
+    tickFps(dt, info) {
+      if (!fps || !(dt > 0)) return;
+      fpsFrames += 1;
+      fpsElapsed += dt;
+      fpsSincePaint += dt;
+      if (dt > fpsWorstDt) fpsWorstDt = dt;
+      if (fpsSincePaint < FPS_PAINT) return;
+      fpsSincePaint = 0;
+      const render = info && info.render;
+      fps.textContent =
+        `${Math.round(1 / dt)} fps now\n` +
+        `${Math.round(fpsFrames / fpsElapsed)} avg\n` +
+        `${Math.round(1 / fpsWorstDt)} min\n` +
+        (render ? `${render.calls} calls\n${formatCount(render.triangles)} tris` : 'no renderer info');
+      if (fpsElapsed >= FPS_WINDOW) {
+        fpsFrames = 0;
+        fpsElapsed = 0;
+        fpsWorstDt = 0;
+      }
     },
   };
 }

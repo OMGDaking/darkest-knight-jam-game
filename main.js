@@ -412,6 +412,27 @@ canvas.addEventListener('mousedown', (e) => {
   }
 });
 
+// TOUCH. A phone has neither a keyboard nor a right button, so the two mouse buttons are rebuilt out of
+// the two halves of the screen: the LEFT half swings and the RIGHT half parries — the same handedness the
+// mouse already uses, left button to swing and right button to parry, so the two schemes are one idea and
+// not two. The parry is the card's one action, so it gets the half a right-handed player rests their
+// thumb on. preventDefault here is load-bearing: without it the browser follows every tap with a
+// synthetic mousedown and the single tap would land two actions.
+canvas.style.touchAction = 'none'; // no pinch zoom and no scroll: every touch belongs to the duel
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (phase === 'title') {
+    beginRun(); // and a tap begins too
+    return;
+  }
+  if (phase === 'transition') return; // the hand-over ignores touch exactly as it ignores the mouse
+  unlockAudio(); // a tap is a user gesture, so it may spend one on the music like a keypress does
+  for (const touch of e.changedTouches) {
+    if (touch.clientX > innerWidth / 2) parry();
+    else attack();
+  }
+}, { passive: false });
+
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
@@ -481,5 +502,6 @@ renderer.setAnimationLoop(() => {
 
   updateMusic();
   refreshBars();
+  ui.tickFps(dt, renderer.info); // does nothing unless ?fps is on the URL
   renderer.render(scene, camera);
 });
