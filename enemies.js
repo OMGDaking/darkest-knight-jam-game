@@ -1,41 +1,37 @@
-// The three enemies as data, plus one Enemy that telegraphs, swings a katana through, and lands it.
+// The two enemies as data — the intro boss and the lord — plus one Enemy that telegraphs, swings a
+// katana through, and lands it.
 import * as THREE from 'three';
 import {
   windupTime, attackIntervalMin, attackIntervalMax, enemyGaugeMax,
-  basicEnemyHealth, miniBossHealth, finalBossHealth,
-  miniBossCadenceScale, finalBossCadenceScale, miniBossWindupScale, finalBossWindupScale,
+  introBossHealth, finalBossHealth,
+  introBossHeavyChance, finalBossHeavyChance,
+  introBossAllowConsecutiveHeavies, finalBossAllowConsecutiveHeavies,
+  finalBossCadenceScale, finalBossWindupScale,
   swingTime, enemyRecoverTime, enemyLunge, enemyLeanBack, telegraphRampTime,
   enemyGlow, enemyWidth, enemyHeight, enemyDepth,
-  enemyColor, enemyWarningColor, enemyStrikeColor,
+  enemyColor, enemyWarningColor, enemyStrikeColor, enemyStunColor, enemyStunSlump, enemyStunBladeDrop,
+  enemyHeavyColor, enemyHeavyStrikeColor, heavyWindupScale, enemyHeavyLeanScale,
   enemyBladeLength, enemyBladeArc, enemyBladeRestAngle, enemyBladeBack, enemyBladeThrough,
   enemyBladeForward, enemyBladeThickness,
 } from './tuning.js';
 
 export const ENEMIES = [
   {
-    id: 'basic',
-    name: 'Basic Enemy',
-    heavyChance: 0, // heavy attacks arrive in M3
-    health: basicEnemyHealth,
+    id: 'intro',
+    name: 'Intro Boss',
+    heavyChance: introBossHeavyChance, // low: he is a boss, but the heavies stay a surprise
+    allowConsecutiveHeavies: introBossAllowConsecutiveHeavies, // OFF: never a heavy after a heavy
+    health: introBossHealth,
     gaugeMax: enemyGaugeMax,
     cadenceMin: attackIntervalMin,
     cadenceMax: attackIntervalMax,
     windupTime,
   },
   {
-    id: 'mini',
-    name: 'Mini Boss',
-    heavyChance: 0, // heavy attacks arrive in M3
-    health: miniBossHealth,
-    gaugeMax: enemyGaugeMax,
-    cadenceMin: attackIntervalMin * miniBossCadenceScale,
-    cadenceMax: attackIntervalMax * miniBossCadenceScale,
-    windupTime: windupTime * miniBossWindupScale,
-  },
-  {
     id: 'final',
     name: 'Final Boss',
-    heavyChance: 0, // heavy attacks arrive in M3
+    heavyChance: finalBossHeavyChance,
+    allowConsecutiveHeavies: finalBossAllowConsecutiveHeavies, // ON: he may chain them, and does
     health: finalBossHealth,
     gaugeMax: enemyGaugeMax,
     cadenceMin: attackIntervalMin * finalBossCadenceScale,
@@ -44,8 +40,13 @@ export const ENEMIES = [
   },
 ];
 
-// Three beats, counted from the start of the swing: idle -> windup (no parry possible) ->
-// swing (the whole parry window) -> recovering.
+// Four beats: idle -> windup (no parry possible) -> swing (the whole parry window) -> recovering.
+// Each wind-up rolls light or heavy from the config's heavyChance; whether a heavy may follow a heavy is
+// the config's own allowConsecutiveHeavies. A heavy is parried EXACTLY like a light — same windows, same
+// outcomes — so its only job is to read as dearer at a glance: it telegraphs in a deeper red, for
+// longer, and leans further back.
+// 'stunned' cuts across all of them: his guard has broken, so he slumps and does nothing at all until
+// the game releases him — the five-second window the player has to cut him down.
 export class Enemy {
   constructor(scene, config) {
     this.config = config;
@@ -55,13 +56,19 @@ export class Enemy {
     this._state = 'idle';
     this._timer = 0;
     this._windupLeft = 0;
+    this._windupTotal = config.windupTime; // the length of the wind-up in progress (a heavy rolls longer)
     this._swingElapsed = 0;
+    this._heavy = false; // is the wind-up in progress a heavy? decided as each wind-up begins
+    this._lastWasHeavy = false; // so the next roll can refuse to chain heavies where the config forbids it
     this._lunged = false;
     this._strikeFrom = new THREE.Vector3();
     this._lungeDir = new THREE.Vector3(0, 0, 1);
     this._baseColor = new THREE.Color(enemyColor);
     this._warningColor = new THREE.Color(enemyWarningColor);
     this._strikeColor = new THREE.Color(enemyStrikeColor);
+    this._stunColor = new THREE.Color(enemyStunColor);
+    this._heavyColor = new THREE.Color(enemyHeavyColor);
+    this._heavyStrikeColor = new THREE.Color(enemyHeavyStrikeColor);
 
     // The box is shifted up inside its own geometry, so the mesh origin sits at the feet:
     // place it with mesh.position.set(x, 0, z) and the lean pivots on the ground.
@@ -86,11 +93,41 @@ export class Enemy {
     return this._state;
   }
 
+  get isStunned() {
+    return this._state === 'stunned';
+  }
+
+  // Is the swing on its way (or winding up) a heavy? The game reads this on the landing frame to know
+  // which damage to bill. Always false between attacks, so a stale flag can never price a light swing.
+  get isHeavy() {
+    return this._heavy;
+  }
+
   // Seconds elapsed since the swing began, counting up from 0, while the enemy is in 'swing'.
   // That is the number the parry is judged on. Null in every other state: no swing, no parry.
   get timeSinceSwing() {
     if (this._state !== 'swing') return null;
     return Math.min(swingTime, Math.max(0, this._swingElapsed));
+  }
+
+  // How long the blade takes to land from the moment a wind-up begins — for a light or for a heavy. The
+  // music phase works backwards from a beat with this: start the telegraph this long before the drum.
+  leadTime(heavy) {
+    return this.config.windupTime * (heavy ? heavyWindupScale : 1) + swingTime;
+  }
+
+  // The music phase names the attack instead of the dice: begin a wind-up now, of the given weight. From
+  // here it is exactly as if it had been rolled — same telegraph, same window, same landing frame.
+  conductAttack(heavy) {
+    if (this._state !== 'idle') return false;
+    this._state = 'windup';
+    this._heavy = heavy;
+    this._lastWasHeavy = heavy;
+    this._windupTotal = this.config.windupTime * (heavy ? heavyWindupScale : 1);
+    this._windupLeft = this._windupTotal;
+    this._timer = 0;
+    this._telegraph(0);
+    return true;
   }
 
   reset() {
@@ -100,6 +137,9 @@ export class Enemy {
     this.gauge = this.config.gaugeMax;
     this._state = 'idle';
     this._windupLeft = 0;
+    this._windupTotal = this.config.windupTime;
+    this._heavy = false; // no swing in the air, and no stale heavy flag to misprice the next one
+    this._lastWasHeavy = false; // a fresh fight may open on a heavy
     this._swingElapsed = 0;
     this._timer = this._nextInterval(); // cadence re-armed from here
     this._mesh.material.color.copy(this._baseColor);
@@ -107,19 +147,58 @@ export class Enemy {
     this._poseIdle(); // weapon and lean back to the idle pose
   }
 
+  // The guard has broken: whatever he was doing stops this instant, including a swing already on its way
+  // through. He slumps, greys out and stays that way until release() — update() does nothing until then.
+  stun() {
+    // Not mid-lunge? Then where he stands now is his mark, so release() brings him back here.
+    if (!this._lunged) this._strikeFrom.copy(this._mesh.position);
+    this._state = 'stunned';
+    this._windupLeft = 0;
+    this._heavy = false; // whatever was on its way is gone with the swing
+    this._swingElapsed = 0;
+    this._timer = 0;
+    this._mesh.rotation.x = enemyStunSlump;
+    this._blade.rotation.z = enemyBladeRestAngle - enemyStunBladeDrop; // the katana drops, point at the floor
+    this._blade.rotation.x = enemyBladeBack;
+    this._mesh.material.color.copy(this._stunColor);
+    this._mesh.material.emissive.setRGB(0, 0, 0); // no glow at all: he is not telegraphing anything
+  }
+
+  // The stun is over: back on his feet at his mark, colour and pose normal, cadence re-armed from here.
+  release() {
+    if (this._state !== 'stunned') return;
+    this._mesh.position.copy(this._strikeFrom); // step back to his mark if the stun caught him lunging
+    this._lunged = false;
+    this._state = 'idle';
+    this._timer = this._nextInterval();
+    this._mesh.material.color.copy(this._baseColor);
+    this._mesh.material.emissive.setRGB(0, 0, 0);
+    this._poseIdle();
+  }
+
   update(dt) {
+    if (this._state === 'stunned') return false; // out cold: no idle, no wind-up, no swing, nothing
+
     if (this._state === 'idle') {
       this._timer -= dt;
       if (this._timer <= 0) {
         this._state = 'windup';
-        this._windupLeft = this.config.windupTime;
+        // Roll light-or-heavy here, as the wind-up begins: a heavy telegraphs longer, so its wind-up is
+        // scaled up, and the colour/lean read differently for the whole of it. Whether a heavy may follow
+        // a heavy is this enemy's own rule (config.allowConsecutiveHeavies): off for the first two, on for
+        // the final boss, who may chain them.
+        const mayRollHeavy = this.config.allowConsecutiveHeavies || !this._lastWasHeavy;
+        this._heavy = mayRollHeavy && Math.random() < (this.config.heavyChance || 0);
+        this._lastWasHeavy = this._heavy;
+        this._windupTotal = this.config.windupTime * (this._heavy ? heavyWindupScale : 1);
+        this._windupLeft = this._windupTotal;
         this._telegraph(0);
       }
     } else if (this._state === 'windup') {
       // The telegraph ramps over telegraphRampTime and then holds. The blade is still up behind
       // him here, so the attack reads well before the parry window opens.
       this._windupLeft -= dt;
-      const elapsed = this.config.windupTime - Math.max(0, this._windupLeft);
+      const elapsed = this._windupTotal - Math.max(0, this._windupLeft);
       this._telegraph(Math.min(1, elapsed / telegraphRampTime));
       if (this._windupLeft <= 0) {
         this._windupLeft = 0;
@@ -157,6 +236,7 @@ export class Enemy {
       if (this._timer <= 0) {
         this._state = 'idle';
         this._lunged = false;
+        this._heavy = false; // the swing is spent: nothing in the air to price as heavy
         this._mesh.position.copy(this._strikeFrom);
         this._mesh.material.color.copy(this._baseColor);
         this._mesh.material.emissive.setRGB(0, 0, 0);
@@ -187,21 +267,25 @@ export class Enemy {
     this._mesh.rotation.x = 0;
   }
 
-  // The whole read of the windup: he leans back and turns warning orange. Nothing moves yet.
+  // The whole read of the windup: he leans back and turns warning orange — or, for a heavy, leans further
+  // and burns a deeper red. Nothing moves yet.
   _telegraph(t) {
     const k = Math.min(1, Math.max(0, t));
-    this._tint(this._baseColor, this._warningColor, k, k);
-    this._mesh.rotation.x = -enemyLeanBack * k; // negative pitch tips the top away from its facing
+    const lean = this._heavy ? enemyLeanBack * enemyHeavyLeanScale : enemyLeanBack;
+    this._tint(this._baseColor, this._heavy ? this._heavyColor : this._warningColor, k, k);
+    this._mesh.rotation.x = -lean * k; // negative pitch tips the top away from its facing
   }
 
   // t runs 0 -> 1 over the swing. The blade sweeps a big arc down across the frame while the body
   // leans through from the windup into the follow-through and the colour heats up.
   _swing(t) {
     const k = Math.min(1, Math.max(0, t));
+    const lean = this._heavy ? enemyLeanBack * enemyHeavyLeanScale : enemyLeanBack;
     this._blade.rotation.z = enemyBladeRestAngle + enemyBladeArc * k;
     this._blade.rotation.x = enemyBladeBack + (enemyBladeThrough - enemyBladeBack) * k;
-    this._mesh.rotation.x = -enemyLeanBack + 2 * enemyLeanBack * k;
-    this._tint(this._warningColor, this._strikeColor, k, 1);
+    this._mesh.rotation.x = -lean + 2 * lean * k;
+    this._tint(this._heavy ? this._heavyColor : this._warningColor,
+               this._heavy ? this._heavyStrikeColor : this._strikeColor, k, 1);
   }
 
   // k runs 0 -> 1 as he comes back out of the follow-through into the idle pose.
@@ -209,8 +293,8 @@ export class Enemy {
     const j = 1 - Math.min(1, Math.max(0, k));
     this._blade.rotation.z = enemyBladeRestAngle + enemyBladeArc * j;
     this._blade.rotation.x = enemyBladeBack + (enemyBladeThrough - enemyBladeBack) * j;
-    this._mesh.rotation.x = enemyLeanBack * j;
-    this._tint(this._strikeColor, this._baseColor, k, j);
+    this._mesh.rotation.x = (this._heavy ? enemyLeanBack * enemyHeavyLeanScale : enemyLeanBack) * j;
+    this._tint(this._heavy ? this._heavyStrikeColor : this._strikeColor, this._baseColor, k, j);
   }
 }
 

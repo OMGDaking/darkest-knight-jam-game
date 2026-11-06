@@ -1,8 +1,14 @@
-// Plain DOM overlay: player health, enemy guard gauge, a big outcome readout and a centre message.
+// Plain DOM overlay: player health, stamina, enemy guard gauge, a big outcome readout and a centre message.
 const OUTCOME_STYLE = {
   perfect: { text: '#ffe066', bg: 'rgba(122,88,0,0.55)', border: '#ffd34d' },
   block: { text: '#8fd8ff', bg: 'rgba(0,52,84,0.55)', border: '#4fb8e8' },
   hit: { text: '#ff6b5a', bg: 'rgba(108,0,0,0.6)', border: '#ff5a4d' },
+  // Winded: the guard never came up, so you were caught flat-footed and cut down — not a blood hit but
+  // a washed-out one. Bone grey on a dim, half-strength badge, so it never reads as the red 'hit'.
+  winded: { text: '#e6ded2', bg: 'rgba(40,37,33,0.45)', border: '#a2968a', opacity: '0.8' },
+  // Wild: a press at empty air, or a flail during the wind-up. Nothing connected, so it is the dimmest
+  // badge of the lot — a muted slate grey that can never be mistaken for the red 'hit' or the blue 'block'.
+  wild: { text: '#b0a6b8', bg: 'rgba(30,28,34,0.4)', border: '#6a6273', opacity: '0.6' },
   ready: { text: '#cfc6b8', bg: 'rgba(30,28,26,0.5)', border: '#6b6459' },
 };
 // The full-screen tint that answers a press: warm gold for a perfect parry, a cold whisper for a block,
@@ -14,6 +20,8 @@ const FLASH_STYLE = {
 };
 const FLASH_FADE_MS = 150;
 const FONT = 'system-ui,-apple-system,"Segoe UI",sans-serif';
+const STAMINA_LIVE = '#9fd8e8';    // the pale cold blue of a bar with wind in it
+const STAMINA_DRAINED = '#6f7d82'; // the same bar with every last scrap of wind gone: greyed out
 
 export function createUI() {
   const hud = document.createElement('div');
@@ -33,18 +41,27 @@ export function createUI() {
   outcome.textContent = 'READY';
   hud.appendChild(outcome);
 
-  const health = makeBar(hud, 'left:24px;bottom:24px;width:280px', 'YOU');
+  // Health, and directly under it its own separate stamina bar. Health sits a little higher than it
+  // used to so the stamina bar fits below it and still clears the very bottom edge of the screen.
+  const health = makeBar(hud, 'left:24px;bottom:60px;width:280px', 'YOU');
+  const stamina = makeBar(hud, 'left:24px;bottom:24px;width:280px', 'STAMINA', STAMINA_LIVE);
   const gauge = makeBar(hud, 'left:50%;top:22px;transform:translateX(-50%);width:340px', 'GUARD');
+  // His health, directly under his guard and the same width, so one look at the top of the screen says
+  // both how close his guard is to breaking and how much of him is left. Its label is his name.
+  const enemyHealth = makeBar(hud, 'left:50%;top:76px;transform:translateX(-50%);width:340px', '', '#d0463c');
 
   const message = document.createElement('div');
+  // pre-line keeps the title screen's and the win screen's line breaks on screen.
   message.style.cssText =
-    'position:absolute;left:0;right:0;top:38%;text-align:center;display:none;' +
+    'position:absolute;left:0;right:0;top:38%;text-align:center;display:none;white-space:pre-line;' +
     `font:600 26px/1.4 ${FONT};color:#e8dfd0;text-shadow:0 2px 6px #000`;
   hud.appendChild(message);
   let messageShown = false;
+  let healthTint = ''; // the bars are refreshed every frame, so only repaint on a real change
+  let staminaDrained = false; // same: the stamina bar is repainted only when the lock comes or goes
 
-  // Which fight this is, along the very bottom edge — below the health bar's band (bottom 24px) and
-  // clear of the guard gauge up top and the outcome readout up left.
+  // Which fight this is, along the very bottom edge — in the centre, clear of the health and stamina
+  // bars down the left, the guard gauge up top and the outcome readout up left.
   const fight = document.createElement('div');
   fight.style.cssText =
     'position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:none;' +
@@ -58,17 +75,43 @@ export function createUI() {
       outcome.style.color = style.text;
       outcome.style.background = style.bg;
       outcome.style.borderColor = style.border;
+      outcome.style.opacity = style.opacity || '1';
     },
     setHealth(value, max) {
-      setFill(health, value, max);
-      health.style.background = value / max > 0.5 ? '#7ee26a' : value / max > 0.25 ? '#f0c040' : '#ff5a4d';
+      setFill(health.fill, value, max);
+      const tint = value / max > 0.5 ? '#7ee26a' : value / max > 0.25 ? '#f0c040' : '#ff5a4d';
+      if (tint !== healthTint) {
+        healthTint = tint;
+        health.fill.style.background = tint;
+      }
+    },
+    // Its own bar, never merged into health: it stays one steady cold blue and never changes colour,
+    // so it can never be mistaken for health or for the enemy's guard. The one exception is `exhausted`:
+    // with no wind left in it the bar stops being a readout and becomes the warning that the player is
+    // locked out of everything, so it drops its label to WINDED and greys itself out until they can act.
+    setStamina(value, max, exhausted) {
+      setFill(stamina.fill, value, max);
+      const drained = !!exhausted;
+      if (drained === staminaDrained) return;
+      staminaDrained = drained;
+      stamina.tag.textContent = drained ? 'WINDED' : 'STAMINA';
+      stamina.tag.style.color = drained ? '#6d675f' : '#9d948a';
+      stamina.fill.style.background = drained ? STAMINA_DRAINED : STAMINA_LIVE;
+      stamina.fill.style.opacity = drained ? '0.4' : '1';
+      stamina.track.style.opacity = drained ? '0.55' : '1';
     },
     setGauge(value, max) {
-      setFill(gauge, value, max);
+      setFill(gauge.fill, value, max);
+    },
+    // His name rides on the label, so there is never a doubt about whose health is draining up there.
+    setEnemyHealth(value, max, label) {
+      setFill(enemyHealth.fill, value, max);
+      setLabel(enemyHealth.tag, label);
     },
     setMessage(text) {
       if (messageShown && message.textContent === text) return;
       message.textContent = text;
+      message.style.opacity = '1'; // a fresh message always arrives at full strength
       message.style.display = 'block';
       messageShown = true;
     },
@@ -76,6 +119,13 @@ export function createUI() {
       if (!messageShown) return;
       message.style.display = 'none';
       messageShown = false;
+    },
+    // 0..1: the hand-over between the fights fades its one line up and back down with this. Purely
+    // additive — setMessage always comes back at 1, so a fade can never leave a message stuck dim.
+    setMessageOpacity(value) {
+      const k = Math.max(0, Math.min(1, Number(value) || 0));
+      if (message.style.opacity === String(k)) return;
+      message.style.opacity = String(k);
     },
     // kind is 'perfect' | 'block' | 'hit'; anything else fades in like a block rather than throwing.
     flash(kind) {
@@ -91,10 +141,23 @@ export function createUI() {
       fight.textContent = text || '';
       fight.style.display = text ? 'block' : 'none';
     },
+    // The hand-over between the fights takes the whole HUD away — the four bars, the outcome badge and the
+    // fight label — so for the length of it the screen holds nothing but the room and the one line.
+    // showHud is the exact inverse, so the overlay can never be left half-hidden.
+    hideHud() {
+      outcome.style.display = 'none';
+      for (const bar of [health, stamina, gauge, enemyHealth]) bar.wrap.style.display = 'none';
+      fight.style.display = 'none';
+    },
+    showHud() {
+      outcome.style.display = 'block';
+      for (const bar of [health, stamina, gauge, enemyHealth]) bar.wrap.style.display = 'block';
+      fight.style.display = fight.textContent ? 'block' : 'none';
+    },
   };
 }
 
-function makeBar(parent, position, label) {
+function makeBar(parent, position, label, color = '#7ee26a') {
   const wrap = document.createElement('div');
   wrap.style.cssText = `position:absolute;${position}`;
 
@@ -108,16 +171,25 @@ function makeBar(parent, position, label) {
     'background:rgba(0,0,0,0.55);overflow:hidden';
 
   const fill = document.createElement('div');
-  fill.style.cssText = 'height:100%;width:100%;background:#7ee26a;transition:width 80ms linear';
+  fill.style.cssText = `height:100%;width:100%;background:${color};transition:width 80ms linear`;
   track.appendChild(fill);
 
   wrap.appendChild(tag);
   wrap.appendChild(track);
   parent.appendChild(wrap);
-  return fill;
+  // wrap too, so the whole bar can be taken off screen for the hand-over between the fights.
+  return { fill, tag, track, wrap };
+}
+
+function setLabel(tag, text) {
+  const next = text || '';
+  if (tag.textContent === next) return; // refreshed every frame: only touch the DOM on a change
+  tag.textContent = next;
 }
 
 function setFill(fill, value, max) {
   const fraction = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
-  fill.style.width = `${fraction * 100}%`;
+  const width = `${fraction * 100}%`;
+  if (fill.style.width === width) return; // stamina ticks every frame: only touch the DOM on a change
+  fill.style.width = width;
 }
