@@ -1,10 +1,10 @@
 // Every number the makers might tune: parry windows, attack timing, damage, gauge and enemy shape.
-export const perfectParryOpensAt = 0.40; // seconds into the swing when a perfect parry becomes possible;
+export const perfectParryOpensAt = 0.37; // seconds into the swing when a perfect parry becomes possible;
                                          // press earlier in the swing than this and you only block.
                                          // MUST stay under swingTime. THIS is the difficulty number: the
-                                         // perfect window is swingTime - perfectParryOpensAt = 0.20s now,
-                                         // half the 0.4s it was. Raise this toward swingTime to make the
-                                         // perfect parry rarer; lower it to be kinder.
+                                         // perfect window is swingTime - perfectParryOpensAt = 0.18s now.
+                                         // The lord scales this with finalBossSwingScale to 0.137s, so the
+                                         // intro boss still hands you 31% more time than he does.
 export const blockDamage = 5;            // health a block costs you. A block drains NO guard at all
 // How often he attacks. This is a pure WAIT that starts once he has recovered from the last swing, so it
 // is added to the animation rather than fitting inside it: the real gap between two blades landing is
@@ -43,15 +43,16 @@ export const impactAlongBlades = 0.45;   // how far along the line from you to t
 export const playerCanWalk = false;      // false = the view is locked: WASD does nothing, no head bob
 
 // Swing timing and placeholder shape for the gray-box enemy.
-export const swingTime = 0.60;           // seconds the swing lasts; the blade lands at the end of it.
-                                         // 0.95 -> 0.60: the blade comes through fast, so the press has to
-                                         // be late and exact. Must stay above perfectParryOpensAt.
+export const swingTime = 0.55;           // seconds the swing lasts; the blade lands at the end of it.
+                                         // 0.95 -> 0.60 -> 0.55: the blade comes through fast, so the press
+                                         // has to be late and exact. Must stay above perfectParryOpensAt.
 
 // THE LORD'S OWN SWING. Both bosses share every number above except this one: his blade comes through in
-// 0.42s against the intro boss's 0.60s, and his perfect-parry window shrinks with it — 0.14s against the
-// intro boss's 0.20s. This is the only number in the file that tightens the timing TEST itself rather
+// 0.42s against the intro boss's 0.55s, and his perfect-parry window shrinks with it — 0.137s against the
+// intro boss's 0.18s. This is the only number in the file that tightens the timing TEST itself rather
 // than just the warning, which makes it the cruellest one here. Lower it to make the lord crueller still.
-export const finalBossSwingScale = 0.7;
+// Raised from 0.70 to 0.76 to hold him at exactly 0.42s when the shared swing above came down to 0.55.
+export const finalBossSwingScale = 0.76;
 export const enemyStrikeTime = 0.15;     // no longer used: the swing absorbs the old separate strike
 export const enemyRecoverTime = 0.25;    // seconds spent recovering after a swing lands
 export const enemyLunge = 0.7;           // metres the enemy lunges forward through the swing

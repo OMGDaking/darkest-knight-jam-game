@@ -26,7 +26,7 @@ export const ENEMIES = [
     cadenceMin: attackIntervalMin,
     cadenceMax: attackIntervalMax,
     windupTime,
-    // His own swing, and the threshold the perfect parry opens at inside it: window = 0.60 - 0.40 = 0.20s
+    // His own swing, and the threshold the perfect parry opens at inside it: window = 0.55 - 0.37 = 0.18s
     swingTime,
     perfectParryOpensAt,
     sprite: 'assets/sprites/intro-boss.png', // the makers' own art, made with an image generator
@@ -42,7 +42,7 @@ export const ENEMIES = [
     cadenceMax: attackIntervalMax * finalBossCadenceScale,
     windupTime: windupTime * finalBossWindupScale,
     // The lord swings faster than anyone: 0.42s, and his threshold scales with it, so his perfect window
-    // is 0.42 - 0.28 = 0.14s. Both shrink together, which is what keeps the parry a read and not a guess.
+    // is 0.42 - 0.28 = 0.137s. Both shrink together, which is what keeps the parry a read and not a guess.
     swingTime: swingTime * finalBossSwingScale,
     perfectParryOpensAt: perfectParryOpensAt * finalBossSwingScale,
     sprite: 'assets/sprites/final-boss.webp', // the makers' own art, made with an image generator
