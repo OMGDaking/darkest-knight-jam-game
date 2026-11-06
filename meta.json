@@ -3,5 +3,5 @@
   "handle": "darkest-knight",
   "description": "",
   "assets": [],
-  "ai_assets": ["assets/audio/boss-theme.wav", "assets/audio/taiko-185.wav"]
+  "ai_assets": ["assets/audio/boss-theme.wav"]
 }
