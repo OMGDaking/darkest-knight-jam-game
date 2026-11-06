@@ -30,6 +30,15 @@ Format for each playtest (after M2 and after M3):
 
 *At the end: What did you decide that Claude didn't? What did you reject from Claude, and why? What would you do with another jam session?*
 
+**What did you decide that Claude didn't?**
+We decided all the ideas for the art and the attack system, with the art direction.
+
+**What did you reject from Claude, and why?**
+We rejected the idea of the final boss that he can't heavy attack twice in a row. We wanted to increase the difficulty.
+
+**What would you do with another jam session?**
+Overall, plan better with timing, and learn how to use AI better.
+
 ## AI Use Disclosure
 
 *Short summary for the gallery, taken from your running log in `devlog/AI-USE-LOG.md` (not from memory at the last minute). Say what you directed yourselves, what Claude Code did in the build terminal (and its builder subagents), and what other AI tools did. List every AI-generated asset file again here, or cite the log row that names it.*
