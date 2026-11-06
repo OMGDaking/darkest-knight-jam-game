@@ -1,5 +1,5 @@
 // Every number the makers might tune: parry windows, attack timing, damage, gauge and enemy shape.
-export const perfectParryOpensAt = 0.75; // seconds into the swing when a perfect parry becomes possible;
+export const perfectParryOpensAt = 0.55; // seconds into the swing when a perfect parry becomes possible;
                                          // press earlier in the swing than this and you only block.
                                          // MUST stay under swingTime: the perfect window is the last
                                          // swingTime - perfectParryOpensAt seconds, and at 0.4s it is
@@ -10,9 +10,9 @@ export const blockDamage = 5;            // health a block costs you. A block dr
 // attackInterval + windupTime + swingTime + enemyRecoverTime. Every one of those four was sped up
 // together, which is the only way it works — dropping the WAIT alone is swallowed whole by the wind-up,
 // because he can never swing again until his telegraph and his swing have finished.
-export const attackIntervalMin = 0.8;    // seconds of breathing room between attacks, lower bound
-export const attackIntervalMax = 1.1;    // and upper bound
-export const windupTime = 1.2;           // seconds of telegraph before the swing starts: no parry yet
+export const attackIntervalMin = 0.6;    // seconds of breathing room between attacks, lower bound
+export const attackIntervalMax = 0.9;    // and upper bound
+export const windupTime = 1.0;           // seconds of telegraph before the swing starts: no parry yet
 export const playerHealthMax = 100;
 export const enemyGaugeMax = 100;
 export const gaugeDrainPerfect = 34;     // gauge removed by a perfect parry. Only a perfect parry drains it
@@ -42,9 +42,9 @@ export const impactAlongBlades = 0.45;   // how far along the line from you to t
 export const playerCanWalk = false;      // false = the view is locked: WASD does nothing, no head bob
 
 // Swing timing and placeholder shape for the gray-box enemy.
-export const swingTime = 1.15;           // seconds the swing lasts; the blade lands at the end of it
+export const swingTime = 0.95;           // seconds the swing lasts; the blade lands at the end of it
 export const enemyStrikeTime = 0.15;     // no longer used: the swing absorbs the old separate strike
-export const enemyRecoverTime = 0.35;    // seconds spent recovering after a swing lands
+export const enemyRecoverTime = 0.25;    // seconds spent recovering after a swing lands
 export const enemyLunge = 0.7;           // metres the enemy lunges forward through the swing
 
 // The windup telegraph: how far it leans, how fast it turns orange, how brightly it glows.
@@ -81,9 +81,14 @@ export const enemyBladeThickness = 0.045; // how thick the box is; it is 0.09 wi
 // Per-enemy values, scaling the shared numbers above. Two fights: the intro boss, then the lord.
 export const introBossHealth = 100;
 export const finalBossHealth = 200;
-export const finalBossCadenceScale = 0.55; // the lord waits less than the intro boss: 0.66-0.88s between
-                                           // his attacks, so he is the faster of the two
-export const finalBossWindupScale = 0.8;   // and telegraphs for less time
+export const finalBossCadenceScale = 0.4;  // the lord waits far less than the intro boss: 0.24-0.36s
+                                           // between his attacks, so he is the faster of the two
+// THE DIFFICULTY LEVER FOR THE LORD. His parry WINDOW is deliberately the same as the intro boss's — the
+// test of timing does not change between fights. What changes is how much warning he gives you: at 0.7 he
+// telegraphs in 0.70s against the intro boss's 1.00s, so you get 30% less time to read which blade is
+// coming. That carries to his heavies too: 1.12s of red against the intro boss's 1.6s. Turn it down to
+// make him crueller, up to be kinder — the perfect window stays 0.4s either way.
+export const finalBossWindupScale = 0.7;   // and telegraphs for less time
 // How often each enemy winds up a HEAVY instead of a light, decided as each wind-up begins.
 // The intro boss throws one only now and then, so the first fight stays readable; the lord leans on them.
 export const introBossHeavyChance = 0.12; // about one heavy in eight
