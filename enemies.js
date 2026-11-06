@@ -26,6 +26,7 @@ export const ENEMIES = [
     cadenceMin: attackIntervalMin,
     cadenceMax: attackIntervalMax,
     windupTime,
+    sprite: 'assets/sprites/intro-boss.png', // the makers' own art, made with an image generator
   },
   {
     id: 'final',
@@ -37,6 +38,7 @@ export const ENEMIES = [
     cadenceMin: attackIntervalMin * finalBossCadenceScale,
     cadenceMax: attackIntervalMax * finalBossCadenceScale,
     windupTime: windupTime * finalBossWindupScale,
+    sprite: 'assets/sprites/final-boss.webp', // the makers' own art, made with an image generator
   },
 ];
 
@@ -63,23 +65,41 @@ export class Enemy {
     this._lunged = false;
     this._strikeFrom = new THREE.Vector3();
     this._lungeDir = new THREE.Vector3(0, 0, 1);
-    this._baseColor = new THREE.Color(enemyColor);
+    // A sprite is TINTED, not painted, so its base is white: the picture then shows exactly as it was
+    // drawn, and the telegraph colours multiply over it. The gray box keeps its own gray.
+    this._baseColor = new THREE.Color(config.sprite ? 0xffffff : enemyColor);
     this._warningColor = new THREE.Color(enemyWarningColor);
     this._strikeColor = new THREE.Color(enemyStrikeColor);
     this._stunColor = new THREE.Color(enemyStunColor);
     this._heavyColor = new THREE.Color(enemyHeavyColor);
     this._heavyStrikeColor = new THREE.Color(enemyHeavyStrikeColor);
 
-    // The box is shifted up inside its own geometry, so the mesh origin sits at the feet:
-    // place it with mesh.position.set(x, 0, z) and the lean pivots on the ground.
-    const geometry = new THREE.BoxGeometry(enemyWidth, enemyHeight, enemyDepth);
+    // THE SPRITE. Where the config names a picture, that picture IS the enemy: a flat cut-out standing on
+    // the very same ground line the box stood on, and leaned, lunged and tinted by exactly the same code
+    // below — nothing about the fight changes, only what you are looking at. A picture cannot sweep a
+    // sword, so the katana box is hidden for it and the swing is carried by the lean, the lunge and the
+    // colour running hot instead. Where no picture is named, this is the gray box, untouched.
+    const sprite = config.sprite ? new THREE.TextureLoader().load(config.sprite) : null;
+    // Both shapes are shifted up inside their own geometry, so the mesh origin sits at the feet: place it
+    // with mesh.position.set(x, 0, z) and the lean pivots on the ground.
+    const geometry = sprite
+      ? new THREE.PlaneGeometry(enemyHeight, enemyHeight) // the art is square, so the plane is too
+      : new THREE.BoxGeometry(enemyWidth, enemyHeight, enemyDepth);
     geometry.translate(0, enemyHeight / 2, 0);
-    this._mesh = new THREE.Mesh(
-      geometry,
-      new THREE.MeshStandardMaterial({ color: this._baseColor.clone() })
-    );
+    const material = sprite
+      ? new THREE.MeshStandardMaterial({
+          map: sprite,
+          color: this._baseColor.clone(), // white, so the picture shows as it was drawn
+          transparent: true,
+          alphaTest: 0.05, // a cut-out, not a floating rectangle of background
+          roughness: 1,
+          metalness: 0,
+        })
+      : new THREE.MeshStandardMaterial({ color: this._baseColor.clone() });
+    this._mesh = new THREE.Mesh(geometry, material);
     this._blade = buildBlade();
     this._mesh.add(this._blade);
+    if (sprite) this._blade.visible = false; // the sword is painted into the art; a box one would float
     scene.add(this._mesh);
 
     this.reset();
