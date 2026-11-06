@@ -35,9 +35,9 @@ Example: "The fog in *Limbo*; Hopper's lighthouse paintings."
 > - `Mini-Boss-Sprite.png` — mini boss: painterly samurai on aged paper, horned helm, blue and gold
 > - `Final-Boss-Sprite.png` — final boss: ukiyo-e woodblock — armour, castle, Mount Fuji, blossom
 >
-> **Arenas**
-> - `Final-Boss-BG.png` — final fight: castle hall, tatami, lanterns, painted ceiling, warm gold
-> - `Background-for-basic-enemies.png` — earlier fights: red-lit throne room, dragon throne, planted swords, embers
+> **Arenas** — the two filenames look swapped for their jobs; this is what you told me they're for.
+> - `Final-Boss-BG.png` — the tatami hall, lanterns, painted ceiling, warm gold: the arena for the **first two fights** (basic enemy and mini boss)
+> - `Background-for-basic-enemies.png` — the golden throne room, dragon throne, planted swords, embers: the **final fight's** arena, because he's the king
 >
 > **Parry and damage VFX**
 > - `Perfect-Parry.png` — parry: white and blue starburst

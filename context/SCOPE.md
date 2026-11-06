@@ -11,13 +11,16 @@ Example: "One beam, ships that spawn and move, rocks, a ship counter."
 > - First person: you see your own sword and a lantern
 > - One enemy at a time in an arena
 > - The enemy telegraphs, then attacks every 2.5 to 3 seconds — light or heavy, chosen at random
-> - Parry with three outcomes: perfect parry, block, or take the hit
+> - Parry with three outcomes: perfect parry (0.0 to 1.0s before the blade lands), block (1.1 to 1.6s early), or take the hit (earlier than that, or never)
+> - Die and you restart the same fight with full health for both of you
 > - Parrying drains the enemy's gauge; an empty gauge means they're open
 > - Attack an open enemy until they're defeated
 > - Player health: no healing inside a fight, back to full when a fight is won
 > - Three fights in a row: basic enemy (no heavy attacks), mini boss, final boss
 > - Final boss at half health: the music starts and its attacks land on the beat
-> - Title, health bar, enemy gauge, score, game over, restart
+> - The final fight is in the golden throne room, because he's the king; the first two fights are in the tatami hall
+> - Title, health bar, enemy gauge, game over, restart
+> - No score — it's a counting story: three fights, then you win
 
 ## Out (not this jam)
 
@@ -25,7 +28,7 @@ Example: "One beam, ships that spawn and move, rocks, a ship counter."
 
 Example: "Weather changes, upgrades, a story."
 
-> **[OPEN — anything you're dropping on purpose? If nothing, say so and I'll leave this empty.]**
+> - A score. It's a counting story, not a scored run.
 
 ## Stretch (only if time is left)
 

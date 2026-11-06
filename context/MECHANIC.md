@@ -24,7 +24,7 @@ Example: "Yes: the ships come at different speeds and angles, so every sweep is 
 
 Example: "No ships for a while, so you just sweep empty fog."
 
-> **[OPEN — your line: what's the worst 30 seconds?]**
+> Skill issue — frustrating to learn and adapt. If the attacks aren't readable in the first seconds of a fight, this is where the game dies.
 
 ## Controls
 
@@ -45,4 +45,6 @@ Example: "Mouse moves the beam. Click to flash it."
 
 Example: "Lose when three ships hit the rocks. Score is ships saved."
 
-> A fight is won when the enemy's gauge is empty and you've attacked them until they're defeated. You lose when your health runs out. Health does not regenerate during a fight, but goes back to full when you win one. Three fights in a row. **[OPEN — what earns score?]**
+> There's no score. It's a counting story: defeat the first enemy and you go to the second, then the third — the final boss — and that's the win. You lose when your health runs out. Health does not regenerate during a fight, but goes back to full when you win one.
+>
+> When you die you restart the same fight, with both you and the enemy back to full health.

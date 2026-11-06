@@ -25,6 +25,6 @@ Example: "Calm but responsible: the only light in a dark storm."
 
 Example: "My grandfather fished off the coast and talked about fog more than storms."
 
-> Our three favourite games are Dark Souls, Sekiro and Hi-Fi Rush.
+> Our three favourite games are Dark Souls, Sekiro and Hi-Fi Rush. We wanted something fun, engaging and high energy, with a little bit of soul feeling.
 >
-> **[OPEN — one line from you: why this game, and whose idea it was]**
+> **[OPEN — whose idea was it? Still need an initial or two for the devlog.]**
